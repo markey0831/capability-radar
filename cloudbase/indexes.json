@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "collections": [
+    {
+      "name": "people",
+      "indexes": [
+        { "name": "identity_lookup", "unique": false, "fields": [{ "field": "normalizedName", "direction": "asc" }, { "field": "normalizedDepartment", "direction": "asc" }] },
+        { "name": "people_status", "unique": false, "fields": [{ "field": "status", "direction": "asc" }] }
+      ]
+    },
+    {
+      "name": "questionnaire_versions",
+      "indexes": [
+        { "name": "role_version_unique", "unique": true, "fields": [{ "field": "roleId", "direction": "asc" }, { "field": "version", "direction": "asc" }] }
+      ]
+    },
+    {
+      "name": "assessment_batches",
+      "indexes": [
+        { "name": "role_status_deadline", "unique": false, "fields": [{ "field": "roleId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "deadlineAt", "direction": "asc" }] }
+      ]
+    },
+    { "name": "role_active_batches", "indexes": [] },
+    {
+      "name": "batch_participants",
+      "indexes": [
+        { "name": "batch_person_unique", "unique": true, "fields": [{ "field": "batchId", "direction": "asc" }, { "field": "personId", "direction": "asc" }] },
+        { "name": "person_history", "unique": false, "fields": [{ "field": "personId", "direction": "asc" }, { "field": "roleIdSnapshot", "direction": "asc" }] }
+      ]
+    },
+    {
+      "name": "assignments",
+      "indexes": [
+        { "name": "batch_participant_rater_unique", "unique": true, "fields": [{ "field": "batchId", "direction": "asc" }, { "field": "participantId", "direction": "asc" }, { "field": "raterPersonId", "direction": "asc" }] },
+        { "name": "rater_identity_tasks", "unique": false, "fields": [{ "field": "batchId", "direction": "asc" }, { "field": "normalizedRaterName", "direction": "asc" }, { "field": "normalizedRaterDepartment", "direction": "asc" }, { "field": "status", "direction": "asc" }] }
+      ]
+    },
+    {
+      "name": "submissions",
+      "indexes": [
+        { "name": "idempotency_unique", "unique": true, "fields": [{ "field": "idempotencyKey", "direction": "asc" }] },
+        { "name": "assignment_history", "unique": false, "fields": [{ "field": "assignmentId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "submittedAt", "direction": "desc" }] },
+        { "name": "participant_results", "unique": false, "fields": [{ "field": "batchId", "direction": "asc" }, { "field": "participantId", "direction": "asc" }, { "field": "status", "direction": "asc" }] }
+      ]
+    },
+    {
+      "name": "result_snapshots",
+      "indexes": [
+        { "name": "snapshot_version_unique", "unique": true, "fields": [{ "field": "batchId", "direction": "asc" }, { "field": "participantId", "direction": "asc" }, { "field": "snapshotVersion", "direction": "asc" }] },
+        { "name": "active_snapshot", "unique": false, "fields": [{ "field": "batchId", "direction": "asc" }, { "field": "participantId", "direction": "asc" }, { "field": "status", "direction": "asc" }] }
+      ]
+    },
+    {
+      "name": "admin_sessions",
+      "indexes": [
+        { "name": "session_expiry", "unique": false, "fields": [{ "field": "expiresAt", "direction": "asc" }, { "field": "revokedAt", "direction": "asc" }] }
+      ]
+    },
+    {
+      "name": "audit_logs",
+      "indexes": [
+        { "name": "audit_target_time", "unique": false, "fields": [{ "field": "targetType", "direction": "asc" }, { "field": "targetId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "version": "2.0",
+  "envId": "replace-with-cloudbase-env-id",
+  "functionRoot": "./cloudfunctions",
+  "functions": [
+    {
+      "name": "capability-radar-api",
+      "dir": "api",
+      "type": "HTTP",
+      "handler": "dist/index.main",
+      "runtime": "Nodejs20.19",
+      "timeout": 30,
+      "memorySize": 256,
+      "installDependency": true
+    },
+    {
+      "name": "capability-radar-close-expired",
+      "dir": "close-expired-batches",
+      "handler": "dist/index.main",
+      "runtime": "Nodejs20.19",
+      "timeout": 60,
+      "memorySize": 256,
+      "installDependency": true,
+      "triggers": [
+        {
+          "name": "close-expired-every-five-minutes",
+          "type": "timer",
+          "config": "0 */5 * * * * *"
+        }
+      ]
+    },
+    {
+      "name": "capability-radar-weekly-backup",
+      "dir": "weekly-backup",
+      "handler": "dist/index.main",
+      "runtime": "Nodejs20.19",
+      "timeout": 900,
+      "memorySize": 512,
+      "installDependency": true,
+      "triggers": [
+        {
+          "name": "weekly-encrypted-backup",
+          "type": "timer",
+          "config": "0 0 3 * * 1 *"
+        }
+      ]
+    }
+  ]
+}

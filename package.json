@@ -1,0 +1,29 @@
+{
+  "name": "capability-radar-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "build:shared": "tsc -p tsconfig.shared.json",
+    "build:functions": "npm.cmd --prefix cloudfunctions/api run build && npm.cmd --prefix cloudfunctions/close-expired-batches run build && npm.cmd --prefix cloudfunctions/weekly-backup run build",
+    "build:all": "npm.cmd run build:shared && npm.cmd run build:functions && npm.cmd run build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:run": "vitest run --maxWorkers=1 --pool=forks",
+    "test:unit": "vitest run --maxWorkers=1 --pool=forks",
+    "test:integration": "vitest run tests/integration --maxWorkers=1 --pool=forks --passWithNoTests",
+    "verify:question-bank": "python scripts/export_question_bank_json.py --check",
+    "security:scan": "node scripts/security/scan-dist.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.1",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.0",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "html2canvas": "^1.4.1"
+  }
+}
