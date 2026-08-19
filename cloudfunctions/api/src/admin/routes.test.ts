@@ -52,6 +52,7 @@ async function setup() {
     management,
     results: new ResultService(repository, now),
     audit: new AuditService(repository, now, () => `audit-${repository.auditLogs.size + 1}`),
+    repository,
     allowedOrigins: config.allowedOrigins,
   }))
   return {
@@ -123,5 +124,63 @@ describe('admin routes', () => {
     expect(response.statusCode).toBe(409)
     expect(JSON.parse(response.body).error.code).toBe('BATCH_NOT_EDITABLE')
     expect([...repository.auditLogs.values()][0]).toMatchObject({ outcome: 'failure', errorCode: 'BATCH_NOT_EDITABLE' })
+  })
+
+  it('复制批次接口返回新的草稿批次并复制人员和任务', async () => {
+    const { app, repository, cookie, csrf } = await setup()
+    repository.people.set('person-1', {
+      id: 'person-1', name: '张三', normalizedName: '张三', department: '销售部', normalizedDepartment: '销售部',
+      currentRoleId: 'sales', canBeEvaluatee: true, canBeRater: true, status: 'active',
+    })
+    repository.batches.set('batch-1', {
+      id: 'batch-1', name: '源批次', roleId: 'sales', questionnaireVersionId: 'v1', assessmentDate: '2026-08-13',
+      startsAt: '2026-08-01T00:00:00.000Z', deadlineAt: '2026-08-31T00:00:00.000Z', status: 'draft',
+    })
+    repository.participants.set('participant-1', {
+      id: 'participant-1', batchId: 'batch-1', personId: 'person-1',
+      nameSnapshot: '张三', departmentSnapshot: '销售部', roleIdSnapshot: 'sales', status: 'active',
+    })
+    repository.assignments.set('assignment-1', {
+      id: 'assignment-1', batchId: 'batch-1', participantId: 'participant-1', raterPersonId: 'person-1',
+      raterNameSnapshot: '张三', raterDepartmentSnapshot: '销售部', normalizedRaterName: '张三', normalizedRaterDepartment: '销售部',
+      level: 'superior', status: 'pending', currentSubmissionId: null, submittedAt: null,
+    })
+
+    const response = await app.handle(event('POST', '/admin/batches/batch-1/copy', {
+      cookie, csrf, origin,
+      body: { name: '复制批次', assessmentDate: '2026-09-01', startsAt: '2026-09-01T00:00:00Z', deadlineAt: '2026-09-30T00:00:00Z' },
+    }))
+    expect(response.statusCode).toBe(201)
+    expect(JSON.parse(response.body)).toMatchObject({ copiedParticipants: 1, copiedAssignments: 1 })
+    const copiedBatch = JSON.parse(response.body).batch
+    expect(copiedBatch).toMatchObject({ name: '复制批次', roleId: 'sales', status: 'draft' })
+    expect([...repository.participants.values()].filter((item) => item.batchId === copiedBatch.id)).toHaveLength(1)
+    expect([...repository.assignments.values()].filter((item) => item.batchId === copiedBatch.id)).toHaveLength(1)
+  })
+
+  it('延长截止时间要求开放批次，归档要求已关闭批次', async () => {
+    const { app, repository, cookie, csrf } = await setup()
+    repository.batches.set('open-batch', {
+      id: 'open-batch', name: '开放批次', roleId: 'sales', questionnaireVersionId: 'v1', assessmentDate: '2026-08-13',
+      startsAt: '2026-08-01T00:00:00.000Z', deadlineAt: '2026-08-31T00:00:00.000Z', status: 'open',
+    })
+    repository.batches.set('closed-batch', {
+      id: 'closed-batch', name: '关闭批次', roleId: 'sales', questionnaireVersionId: 'v1', assessmentDate: '2026-08-13',
+      startsAt: '2026-08-01T00:00:00.000Z', deadlineAt: '2026-08-31T00:00:00.000Z', status: 'closed',
+    })
+
+    const extend = await app.handle(event('POST', '/admin/batches/open-batch/extend', {
+      cookie, csrf, origin, body: { deadlineAt: '2026-09-15T00:00:00Z' },
+    }))
+    expect(extend.statusCode).toBe(200)
+    expect(JSON.parse(extend.body).deadlineAt).toBe('2026-09-15T00:00:00Z')
+
+    const archiveDraft = await app.handle(event('POST', '/admin/batches/open-batch/archive', { cookie, csrf, origin }))
+    expect(archiveDraft.statusCode).toBe(409)
+    expect(JSON.parse(archiveDraft.body).error.code).toBe('BATCH_NOT_CLOSED')
+
+    const archive = await app.handle(event('POST', '/admin/batches/closed-batch/archive', { cookie, csrf, origin }))
+    expect(archive.statusCode).toBe(200)
+    expect(JSON.parse(archive.body).status).toBe('archived')
   })
 })

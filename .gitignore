@@ -37,6 +37,7 @@ output/playwright
 # CloudBase local and production configuration
 cloudbaserc.json
 cloudfunctions/*/dist
+cloudfunctions/*/index.js
 cloudfunctions/*/node_modules
 backups
   

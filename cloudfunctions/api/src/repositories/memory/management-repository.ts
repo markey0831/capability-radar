@@ -43,6 +43,10 @@ export class MemoryManagementRepository extends MemoryPublicRepository implement
     this.people.set(person.id, structuredClone(person))
   }
 
+  async deletePerson(personId: string): Promise<void> {
+    this.people.delete(personId)
+  }
+
   async getBatch(batchId: string): Promise<BatchRecord | null> {
     const value = this.batches.get(batchId)
     return value ? structuredClone(value) : null

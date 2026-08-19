@@ -3,10 +3,13 @@ import type { RaterLevel } from '../../../../shared/domain/types'
 import type { Router } from '../http/router'
 import type { HttpRequest } from '../http/types'
 import { badRequest } from '../http/errors'
+import type { ResultsRepository } from '../repositories/contracts'
 import type { AdminSessionService } from '../security/session'
 import type { ManagementService } from '../services/management-service'
 import type { ResultService } from '../services/result-service'
 import type { AuditService } from '../audit/audit-service'
+import { buildAssessmentExportDataset } from '../export/export-service'
+import { buildAssessmentWorkbook } from '../export/excel-workbook'
 import { assertWriteOrigin } from './auth'
 
 interface AdminRouteDependencies {
@@ -14,6 +17,7 @@ interface AdminRouteDependencies {
   management: ManagementService
   results: ResultService
   audit: AuditService
+  repository: ResultsRepository
   allowedOrigins: ReadonlySet<string>
 }
 
@@ -109,6 +113,13 @@ export function registerAdminRoutes(router: Router, dependencies: AdminRouteDepe
     return { status: 200, body: person }
   })
 
+  router.register('DELETE', '/admin/people/:personId', async (request, params) => {
+    const result = await audited(request, dependencies, { action: 'person.delete', targetType: 'person', targetId: params.personId }, () =>
+      dependencies.management.deletePerson(params.personId),
+    )
+    return { status: 200, body: result }
+  })
+
   router.register('GET', '/admin/batches', async (request) => {
     await readSession(request, dependencies)
     return { status: 200, body: await dependencies.management.listBatches() }
@@ -126,6 +137,47 @@ export function registerAdminRoutes(router: Router, dependencies: AdminRouteDepe
       }),
     )
     return { status: 201, body: batch }
+  })
+
+  router.register('PUT', '/admin/batches/:batchId', async (request, params) => {
+    const input = body(request)
+    const batch = await audited(request, dependencies, { action: 'batch.update', targetType: 'batch', targetId: params.batchId }, () =>
+      dependencies.management.updateBatch(params.batchId, {
+        name: text(input.name, '批次名称'),
+        assessmentDate: text(input.assessmentDate, '评估日期'),
+        startsAt: text(input.startsAt, '开放时间'),
+        deadlineAt: text(input.deadlineAt, '截止时间'),
+      }),
+    )
+    return { status: 200, body: batch }
+  })
+
+  router.register('POST', '/admin/batches/:batchId/extend', async (request, params) => {
+    const input = body(request)
+    const batch = await audited(request, dependencies, { action: 'batch.extend', targetType: 'batch', targetId: params.batchId }, () =>
+      dependencies.management.extendBatch(params.batchId, text(input.deadlineAt, '截止时间')),
+    )
+    return { status: 200, body: batch }
+  })
+
+  router.register('POST', '/admin/batches/:batchId/archive', async (request, params) => {
+    const batch = await audited(request, dependencies, { action: 'batch.archive', targetType: 'batch', targetId: params.batchId }, () =>
+      dependencies.management.archiveBatch(params.batchId),
+    )
+    return { status: 200, body: batch }
+  })
+
+  router.register('POST', '/admin/batches/:batchId/copy', async (request, params) => {
+    const input = body(request)
+    const result = await audited(request, dependencies, { action: 'batch.copy', targetType: 'batch', targetId: params.batchId }, () =>
+      dependencies.management.copyBatch(params.batchId, {
+        name: text(input.name, '批次名称'),
+        assessmentDate: text(input.assessmentDate, '评估日期'),
+        startsAt: text(input.startsAt, '开放时间'),
+        deadlineAt: text(input.deadlineAt, '截止时间'),
+      }),
+    )
+    return { status: 201, body: result }
   })
 
   router.register('GET', '/admin/batches/:batchId', async (request, params) => {
@@ -222,5 +274,32 @@ export function registerAdminRoutes(router: Router, dependencies: AdminRouteDepe
   router.register('GET', '/admin/batches/:batchId/results/:participantId', async (request, params) => {
     await readSession(request, dependencies)
     return { status: 200, body: await dependencies.results.getParticipantResult(params.batchId, params.participantId) }
+  })
+
+  router.register('GET', '/admin/batches/:batchId/export', async (request, params) => {
+    const session = await readSession(request, dependencies)
+    return dependencies.audit.run({
+      action: 'report.export',
+      targetType: 'batch',
+      targetId: params.batchId,
+      actorSessionId: session.id,
+      requestId: request.requestId,
+    }, async () => {
+      const dataset = await buildAssessmentExportDataset(params.batchId, {
+        repository: dependencies.repository,
+        resultService: dependencies.results,
+      })
+      const buffer = await buildAssessmentWorkbook(dataset)
+      const roleName = dataset.batch.roleName
+      const safeName = dataset.batch.name.replace(/[^\w\u4e00-\u9fa5-]+/g, '_')
+      return {
+        status: 200,
+        body: {
+          filename: `${safeName}_${roleName}_能力评估.xlsx`,
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          data: buffer.toString('base64'),
+        },
+      }
+    })
   })
 }

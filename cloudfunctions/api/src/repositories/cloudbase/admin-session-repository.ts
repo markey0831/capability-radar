@@ -4,7 +4,7 @@ export class CloudBaseAdminSessionRepository implements AdminSessionRepository {
   constructor(private readonly database: any) {}
 
   async createSession(session: AdminSessionRecord): Promise<void> {
-    await this.database.collection('admin_sessions').doc(session.id).set({ data: session })
+    await this.database.collection('admin_sessions').doc(session.id).set(session)
   }
 
   async getSession(sessionId: string): Promise<AdminSessionRecord | null> {
@@ -18,12 +18,12 @@ export class CloudBaseAdminSessionRepository implements AdminSessionRepository {
   }
 
   async updateCsrfTokenHash(sessionId: string, csrfTokenHash: string): Promise<void> {
-    await this.database.collection('admin_sessions').doc(sessionId).update({ data: { csrfTokenHash } })
+    await this.database.collection('admin_sessions').doc(sessionId).update({ csrfTokenHash })
   }
 
   async revokeSession(sessionId: string, revokedAt: string): Promise<void> {
     try {
-      await this.database.collection('admin_sessions').doc(sessionId).update({ data: { revokedAt } })
+      await this.database.collection('admin_sessions').doc(sessionId).update({ revokedAt })
     } catch (error) {
       if (!(error instanceof Error) || !/not[ -]?found|does not exist|DOCUMENT_NOT_FOUND/i.test(error.message)) throw error
     }

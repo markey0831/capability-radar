@@ -18,7 +18,10 @@ if (!envId || confirmed !== envId) throw new Error('请同时使用 --env <环�
 const raw = await readFile(new URL('../seed/questionnaire-v1.json', import.meta.url), 'utf8')
 const bank = JSON.parse(raw)
 const checksum = createHash('sha256').update(raw).digest('hex')
-const app = cloudbase.init({ env: envId })
+const credentials = process.env.CLOUDBASE_SECRET_ID && process.env.CLOUDBASE_SECRET_KEY
+  ? { secretId: process.env.CLOUDBASE_SECRET_ID, secretKey: process.env.CLOUDBASE_SECRET_KEY, sessionToken: process.env.CLOUDBASE_TOKEN }
+  : {}
+const app = cloudbase.init({ env: envId, region: process.env.CLOUDBASE_REGION, ...credentials })
 const collection = app.database().collection('questionnaire_versions')
 
 for (const role of bank.roles) {
@@ -35,7 +38,7 @@ for (const role of bank.roles) {
     process.stdout.write(`题库已存在且摘要一致：${id}\n`)
     continue
   }
-  await collection.doc(id).set({ data: {
+  await collection.doc(id).set({
     id,
     roleId: role.id,
     version: bank.version,
@@ -45,6 +48,6 @@ for (const role of bank.roles) {
     sourceChecksum: bank.checksum,
     dimensions: role.dimensions,
     publishedAt: new Date().toISOString(),
-  } })
+  })
   process.stdout.write(`已发布题库：${id}\n`)
 }

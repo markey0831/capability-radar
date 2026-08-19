@@ -19,7 +19,10 @@ if (/prod|production/i.test(envId) && !process.argv.includes('--allow-production
   throw new Error('默认禁止初始化疑似生产环境；生产环境还需显式添加 --allow-production')
 }
 
-const app = cloudbase.init({ env: envId })
+const credentials = process.env.CLOUDBASE_SECRET_ID && process.env.CLOUDBASE_SECRET_KEY
+  ? { secretId: process.env.CLOUDBASE_SECRET_ID, secretKey: process.env.CLOUDBASE_SECRET_KEY, sessionToken: process.env.CLOUDBASE_TOKEN }
+  : {}
+const app = cloudbase.init({ env: envId, region: process.env.CLOUDBASE_REGION, ...credentials })
 const database = app.database()
 for (const collection of schema.collections) {
   try {

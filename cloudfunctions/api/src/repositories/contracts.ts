@@ -140,6 +140,7 @@ export interface ManagementRepository {
   listBatches(): Promise<BatchRecord[]>
   getPerson(personId: string): Promise<PersonRecord | null>
   savePerson(person: PersonRecord): Promise<void>
+  deletePerson(personId: string): Promise<void>
   getBatch(batchId: string): Promise<BatchRecord | null>
   saveBatch(batch: BatchRecord): Promise<void>
   listParticipants(batchId: string): Promise<ParticipantRecord[]>

@@ -1,11 +1,11 @@
-import { renderComparisonTable, renderRadarCard, resultToCardData, savedToCardData } from './chart/radar-chart'
-import { getRoleModel, ROLE_MODELS } from './config/role-models'
-import { calculateAssessment, classifyRater, formatScore } from './domain/score-engine'
-import { RATER_LEVELS } from './domain/types'
-import type { AssessmentDraft, AssessmentResult, RaterInput, RaterLevel, RoleId, SavedAssessmentV1 } from './domain/types'
-import { exportElementToPng, makePngFilename } from './export/png-export'
-import { createSavedAssessment, deleteRecord, findPreviousCompatibleRecord, loadHistory, saveRecord, sortHistory } from './storage/history-store'
-import { escapeHtml } from './utils/html'
+import { renderComparisonTable, renderRadarCard, resultToCardData, savedToCardData } from '../chart/radar-chart'
+import { getRoleModel, ROLE_MODELS } from '../config/role-models'
+import { calculateAssessment, classifyRater, formatScore } from '../domain/score-engine'
+import { RATER_LEVELS } from '../domain/types'
+import type { AssessmentDraft, AssessmentResult, RaterInput, RaterLevel, RoleId, SavedAssessmentV1 } from '../domain/types'
+import { exportElementToPng, makePngFilename } from '../export/png-export'
+import { createSavedAssessment, deleteRecord, findPreviousCompatibleRecord, loadHistory, saveRecord, sortHistory } from '../storage/history-store'
+import { escapeHtml } from '../utils/html'
 
 const PRIVACY_KEY = 'capability-radar:privacy-acknowledged'
 const LEVEL_META: Record<RaterLevel, { name: string; description: string; weight: string }> = {
@@ -213,7 +213,7 @@ function renderHistoryDetail(record: SavedAssessmentV1): string {
   </section>`
 }
 
-export function createApp(root: HTMLElement): void {
+export function createStandaloneApp(root: HTMLElement): void {
   const state: AppState = {
     view: 'assessment', step: 1, draft: createDraft(), result: null, previous: null,
     historyDetailId: null, fieldErrors: {}, notice: null,

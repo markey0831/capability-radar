@@ -17,7 +17,10 @@ const schema = JSON.parse(await readFile(new URL('../indexes.json', import.meta.
 const raw = await readFile(new URL('../seed/questionnaire-v1.json', import.meta.url), 'utf8')
 const bank = JSON.parse(raw)
 const checksum = createHash('sha256').update(raw).digest('hex')
-const database = cloudbase.init({ env: envId }).database()
+const credentials = process.env.CLOUDBASE_SECRET_ID && process.env.CLOUDBASE_SECRET_KEY
+  ? { secretId: process.env.CLOUDBASE_SECRET_ID, secretKey: process.env.CLOUDBASE_SECRET_KEY, sessionToken: process.env.CLOUDBASE_TOKEN }
+  : {}
+const database = cloudbase.init({ env: envId, region: process.env.CLOUDBASE_REGION, ...credentials }).database()
 
 let failed = false
 for (const definition of schema.collections) {

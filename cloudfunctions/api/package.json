@@ -3,9 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "type": "commonjs",
-  "main": "dist/index.js",
+  "main": "index.js",
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist/index.js --external:@cloudbase/node-sdk --external:exceljs"
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=index.js --external:@cloudbase/node-sdk --external:exceljs"
   },
   "dependencies": {
     "@cloudbase/node-sdk": "^3.18.1",

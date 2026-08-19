@@ -62,7 +62,11 @@ export class CloudBaseManagementRepository extends CloudBasePublicRepository imp
   }
 
   async savePerson(person: PersonRecord): Promise<void> {
-    await this.db.collection('people').doc(person.id).set({ data: person })
+    await this.db.collection('people').doc(person.id).set(person)
+  }
+
+  async deletePerson(personId: string): Promise<void> {
+    await this.db.collection('people').doc(personId).remove()
   }
 
   async getBatch(batchId: string): Promise<BatchRecord | null> {
@@ -70,7 +74,7 @@ export class CloudBaseManagementRepository extends CloudBasePublicRepository imp
   }
 
   async saveBatch(batch: BatchRecord): Promise<void> {
-    await this.db.collection('assessment_batches').doc(batch.id).set({ data: batch })
+    await this.db.collection('assessment_batches').doc(batch.id).set(batch)
   }
 
   async listParticipants(batchId: string): Promise<ParticipantRecord[]> {
@@ -78,7 +82,7 @@ export class CloudBaseManagementRepository extends CloudBasePublicRepository imp
   }
 
   async saveParticipant(participant: ParticipantRecord): Promise<void> {
-    await this.db.collection('batch_participants').doc(participant.id).set({ data: participant })
+    await this.db.collection('batch_participants').doc(participant.id).set(participant)
   }
 
   async listAssignments(batchId: string): Promise<AssignmentRecord[]> {
@@ -92,7 +96,7 @@ export class CloudBaseManagementRepository extends CloudBasePublicRepository imp
       raterPersonId: assignment.raterPersonId,
     }).limit(2).get() as QueryResult<AssignmentRecord>
     if (all(duplicates).some((candidate) => candidate.id !== assignment.id)) throw new Error('DUPLICATE_ASSIGNMENT')
-    await this.db.collection('assignments').doc(assignment.id).set({ data: assignment })
+    await this.db.collection('assignments').doc(assignment.id).set(assignment)
   }
 
   async openBatchAtomic(batchId: string, roleId: string, openedAt: string) {
@@ -106,8 +110,8 @@ export class CloudBaseManagementRepository extends CloudBasePublicRepository imp
       if (batch.status !== 'draft') return 'invalid-status' as const
       try { active = first(await activeRef.get()) } catch (error) { if (!missing(error)) throw error }
       if (active) return 'role-already-open' as const
-      await batchRef.update({ data: { status: 'open', updatedAt: openedAt } })
-      await activeRef.set({ data: { roleId, batchId, openedAt } })
+      await batchRef.update({ status: 'open', updatedAt: openedAt })
+      await activeRef.set({ roleId, batchId, openedAt })
       return 'opened' as const
     })
     return result?.result ?? result
@@ -128,10 +132,10 @@ export class CloudBaseManagementRepository extends CloudBasePublicRepository imp
       try { batch = first<BatchRecord>(await batchRef.get()) } catch (error) { if (!missing(error)) throw error }
       if (!batch) return 'not-found' as const
       if (batch.status !== 'open') return 'invalid-status' as const
-      await batchRef.update({ data: { status: 'closed', closedAt, updatedAt: closedAt } })
+      await batchRef.update({ status: 'closed', closedAt, updatedAt: closedAt })
       await transaction.collection('role_active_batches').doc(batch.roleId).remove()
       for (const snapshot of snapshots) {
-        await transaction.collection('result_snapshots').doc(snapshot.id).set({ data: snapshot })
+        await transaction.collection('result_snapshots').doc(snapshot.id).set(snapshot)
       }
       return 'closed' as const
     })
@@ -150,10 +154,10 @@ export class CloudBaseManagementRepository extends CloudBasePublicRepository imp
       const activeRef = transaction.collection('role_active_batches').doc(batch.roleId)
       try { active = first(await activeRef.get()) } catch (error) { if (!missing(error)) throw error }
       if (active) return 'role-already-open' as const
-      await batchRef.update({ data: { status: 'open', closedAt: null, updatedAt: reopenedAt } })
-      await activeRef.set({ data: { roleId: batch.roleId, batchId, openedAt: reopenedAt } })
+      await batchRef.update({ status: 'open', closedAt: null, updatedAt: reopenedAt })
+      await activeRef.set({ roleId: batch.roleId, batchId, openedAt: reopenedAt })
       for (const snapshot of snapshots.filter((item) => item.status === 'active')) {
-        await transaction.collection('result_snapshots').doc(snapshot.id).update({ data: { status: 'invalidated' } })
+        await transaction.collection('result_snapshots').doc(snapshot.id).update({ status: 'invalidated' })
       }
       return 'reopened' as const
     })
@@ -169,9 +173,9 @@ export class CloudBaseManagementRepository extends CloudBasePublicRepository imp
       if (submission.status === 'voided') return 'already-voided' as const
       const batch = first<BatchRecord>(await transaction.collection('assessment_batches').doc(submission.batchId).get())
       if (!batch || batch.status !== 'open') return 'batch-closed' as const
-      await submissionRef.update({ data: { status: 'voided', voidReason: reason, voidedAt, updatedAt: voidedAt } })
+      await submissionRef.update({ status: 'voided', voidReason: reason, voidedAt, updatedAt: voidedAt })
       await transaction.collection('assignments').doc(submission.assignmentId).update({
-        data: { status: 'pending', currentSubmissionId: null, submittedAt: null, updatedAt: voidedAt },
+        status: 'pending', currentSubmissionId: null, submittedAt: null, updatedAt: voidedAt,
       })
       return 'voided' as const
     })
@@ -179,6 +183,6 @@ export class CloudBaseManagementRepository extends CloudBasePublicRepository imp
   }
 
   async appendAuditLog(record: AuditLogRecord): Promise<void> {
-    await this.db.collection('audit_logs').doc(record.id).set({ data: record })
+    await this.db.collection('audit_logs').doc(record.id).set(record)
   }
 }

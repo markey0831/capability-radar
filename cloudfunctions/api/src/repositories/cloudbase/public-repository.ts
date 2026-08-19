@@ -88,14 +88,12 @@ export class CloudBasePublicRepository implements PublicRepository {
         return { status: 'already-submitted', submittedAt: assignment.submittedAt } satisfies CreateSubmissionResult
       }
 
-      await submissionReference.set({ data: input.submission })
+      await submissionReference.set(input.submission)
       await assignmentReference.update({
-        data: {
-          status: 'submitted',
-          currentSubmissionId: input.submission.id,
-          submittedAt: input.submission.submittedAt,
-          updatedAt: input.submission.submittedAt,
-        },
+        status: 'submitted',
+        currentSubmissionId: input.submission.id,
+        submittedAt: input.submission.submittedAt,
+        updatedAt: input.submission.submittedAt,
       })
       return { status: 'created', submission: input.submission } satisfies CreateSubmissionResult
     })

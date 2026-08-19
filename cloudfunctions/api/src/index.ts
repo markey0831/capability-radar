@@ -43,6 +43,7 @@ const app = createApp(config, (router) => {
     management: managementService,
     results: resultService,
     audit: auditService,
+    repository,
     allowedOrigins: config.allowedOrigins,
   })
 })
