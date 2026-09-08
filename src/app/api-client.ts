@@ -38,7 +38,7 @@ export class ApiClient {
     const env = import.meta.env as Record<string, string | undefined> | undefined
     this.baseUrl = (options.baseUrl ?? env?.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
     this.fetchImpl = options.fetch ?? fetch
-    this.timeoutMs = options.timeoutMs ?? 15_000
+    this.timeoutMs = options.timeoutMs ?? 30_000
     this.getCsrfToken = options.getCsrfToken ?? (() => null)
     this.onUnauthorized = options.onUnauthorized ?? (() => undefined)
   }
@@ -51,6 +51,24 @@ export class ApiClient {
     const csrfToken = this.getCsrfToken()
     if (csrfToken && !['GET', 'HEAD', 'OPTIONS'].includes(method)) headers.set('X-CSRF-Token', csrfToken)
 
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        return await this.requestOnce<T>(path, init, method, headers)
+      } catch (error) {
+        const retryable = error instanceof ApiError && (error.code === 'NETWORK_ERROR' || error.code === 'TIMEOUT')
+        if (!retryable || attempt === 1) throw error
+        await new Promise((resolve) => globalThis.setTimeout(resolve, 800))
+      }
+    }
+    throw new ApiError(0, 'NETWORK_ERROR', '网络连接失败，请稍后重试')
+  }
+
+  private async requestOnce<T>(
+    path: string,
+    init: RequestInit,
+    method: string,
+    headers: Headers,
+  ): Promise<T> {
     const controller = new AbortController()
     const timeout = globalThis.setTimeout(() => controller.abort(), this.timeoutMs)
     try {
