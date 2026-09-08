@@ -57,7 +57,10 @@ export class Router<T> {
   }
 
   get pathname(): string {
-    return this.viewWindow.location.pathname
+    const hash = this.viewWindow.location.hash
+    const raw = hash.startsWith('#') ? hash.slice(1) : hash
+    if (!raw) return '/'
+    return raw.startsWith('/') ? raw : `/${raw}`
   }
 
   match(pathname = this.pathname): RouteMatch<T> | null {
@@ -66,19 +69,19 @@ export class Router<T> {
 
   navigate(to: string): void {
     if (this.pathname === to) return
-    this.viewWindow.history.pushState({}, '', to)
+    this.viewWindow.location.hash = to
     this.handler?.(this.match())
   }
 
   start(onChange: (match: RouteMatch<T> | null) => void): () => void {
     this.handler = onChange
-    const onPopState = (): void => {
+    const onHashChange = (): void => {
       this.handler?.(this.match())
     }
-    this.viewWindow.addEventListener('popstate', onPopState)
+    this.viewWindow.addEventListener('hashchange', onHashChange)
     onChange(this.match())
     return () => {
-      this.viewWindow.removeEventListener('popstate', onPopState)
+      this.viewWindow.removeEventListener('hashchange', onHashChange)
       this.handler = null
     }
   }

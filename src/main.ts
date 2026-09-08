@@ -74,7 +74,7 @@ function renderRoute(match: RouteMatch<RouteKind> | null): void {
   }
   const hasBackend = Boolean((import.meta.env as Record<string, string | undefined> | undefined)?.VITE_API_BASE_URL)
   createAdminApp(host, createAdminApi(), {
-    initialPath: window.location.pathname,
+    initialPath: router.pathname,
     demoPassword: hasBackend ? undefined : MemoryAdminApi.demoPassword,
     sessionStore: adminSessionStore,
   })

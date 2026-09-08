@@ -27,7 +27,7 @@ function parseRequest(event: CloudBaseHttpEvent, config: ApiConfig): HttpRequest
   if (Buffer.byteLength(rawBody, 'utf8') > config.maxJsonBodyBytes) throw payloadTooLarge()
 
   const isWrite = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
-  if (isWrite && !headers['content-type']?.toLowerCase().startsWith('application/json')) {
+  if (isWrite && rawBody && !headers['content-type']?.toLowerCase().startsWith('application/json')) {
     throw unsupportedMediaType()
   }
   let json: unknown = null
