@@ -303,3 +303,36 @@ main { flex: 1; }
 .extend-form input { padding: 8px 9px; border: 1px solid #c9dbe7; border-radius: 6px; }
 .admin-row-select { display: grid; place-items: center; cursor: pointer; }
 .admin-row-actions { display: flex; gap: 6px; }
+
+/* UI 居中优化 */
+.admin-panel h1,
+.admin-panel h2,
+.route-placeholder h1,
+.questionnaire-panel .page-intro,
+.questionnaire-panel .page-intro h1 {
+  text-align: center;
+}
+
+.admin-login {
+  text-align: center;
+}
+
+.admin-inline-form,
+.admin-actions {
+  justify-content: center;
+}
+
+.stack-form .button,
+.admin-inline-form .button,
+.admin-login .button {
+  justify-self: center;
+  min-width: 180px;
+}
+
+.sticky-actions {
+  justify-content: center;
+}
+
+.batch-meta {
+  justify-content: center;
+}

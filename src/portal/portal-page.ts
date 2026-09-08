@@ -12,9 +12,11 @@ export function createPortalApp(host: HTMLElement): void {
       .portal-header { text-align: center; margin-bottom: 28px; }
       .portal-header h1 { margin: 0 0 8px; font-size: 28px; }
       .portal-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
-      .portal-card { background: #fff; border: 1px solid #e3ebf3; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 6px 18px rgba(17, 120, 197, 0.06); }
+      .portal-card { background: #fff; border: 1px solid #e3ebf3; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; box-shadow: 0 6px 18px rgba(17, 120, 197, 0.06); }
       .portal-card h2 { margin: 0; font-size: 20px; }
-      .portal-select { width: 100%; padding: 10px 12px; border: 1px solid #cfdce9; border-radius: 8px; font-size: 16px; }
+      .portal-card .field { width: 100%; }
+      .portal-card .button { width: 100%; justify-content: center; }
+      .portal-select { width: 100%; padding: 10px 12px; border: 1px solid #cfdce9; border-radius: 8px; font-size: 16px; text-align: center; }
       .portal-footer { text-align: center; margin-top: 28px; }
       .portal-footer a { color: #1178c5; text-decoration: none; }
       .portal-footer a:hover { text-decoration: underline; }
