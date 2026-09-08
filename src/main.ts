@@ -1,5 +1,6 @@
 import './style.css'
 import { createStandaloneApp } from './legacy/standalone-app'
+import { createPortalApp } from './portal/portal-page'
 import { Router } from './app/router'
 import type { RouteMatch } from './app/router'
 import { ApiClient } from './app/api-client'
@@ -16,13 +17,14 @@ const rootElement = document.querySelector<HTMLDivElement>('#app')
 if (!rootElement) throw new Error('应用挂载节点不存在')
 const root: HTMLDivElement = rootElement
 
-type RouteKind = 'standalone' | 'questionnaire' | 'admin'
+type RouteKind = 'portal' | 'standalone' | 'questionnaire' | 'admin'
 
 const routes = [
   { path: '/q/:roleCode', value: 'questionnaire' as const },
   { path: '/admin/*', value: 'admin' as const },
   { path: '/admin', value: 'admin' as const },
-  { path: '/', value: 'standalone' as const },
+  { path: '/standalone', value: 'standalone' as const },
+  { path: '/', value: 'portal' as const },
 ]
 
 const router = new Router<RouteKind>(routes)
@@ -64,6 +66,10 @@ function renderRoute(match: RouteMatch<RouteKind> | null): void {
 
   if (kind === 'standalone') {
     createStandaloneApp(host)
+    return
+  }
+  if (kind === 'portal') {
+    createPortalApp(host)
     return
   }
   if (kind === 'questionnaire') {
