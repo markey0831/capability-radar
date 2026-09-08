@@ -51,13 +51,14 @@ export class ApiClient {
     const csrfToken = this.getCsrfToken()
     if (csrfToken && !['GET', 'HEAD', 'OPTIONS'].includes(method)) headers.set('X-CSRF-Token', csrfToken)
 
-    for (let attempt = 0; attempt < 2; attempt += 1) {
+    const retryDelays = [1000, 3000]
+    for (let attempt = 0; attempt <= retryDelays.length; attempt += 1) {
       try {
         return await this.requestOnce<T>(path, init, method, headers)
       } catch (error) {
         const retryable = error instanceof ApiError && (error.code === 'NETWORK_ERROR' || error.code === 'TIMEOUT')
-        if (!retryable || attempt === 1) throw error
-        await new Promise((resolve) => globalThis.setTimeout(resolve, 800))
+        if (!retryable || attempt >= retryDelays.length) throw error
+        await new Promise((resolve) => globalThis.setTimeout(resolve, retryDelays[attempt]))
       }
     }
     throw new ApiError(0, 'NETWORK_ERROR', '网络连接失败，请稍后重试')
