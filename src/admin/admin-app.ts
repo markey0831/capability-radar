@@ -119,7 +119,9 @@ export function createAdminApp(host: HTMLElement, api: AdminApi, options: AdminA
     state.notice = null
     render()
     try {
-      await Promise.all([loadRoles(), loadPeople(), loadBatches()])
+      await loadRoles()
+      await loadPeople()
+      await loadBatches()
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
         clearAuthenticated()
