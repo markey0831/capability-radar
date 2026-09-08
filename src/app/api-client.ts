@@ -51,7 +51,7 @@ export class ApiClient {
     const csrfToken = this.getCsrfToken()
     if (csrfToken && !['GET', 'HEAD', 'OPTIONS'].includes(method)) headers.set('X-CSRF-Token', csrfToken)
 
-    const retryDelays = [3000, 8000]
+    const retryDelays = [5000, 10000]
     for (let attempt = 0; attempt <= retryDelays.length; attempt += 1) {
       try {
         return await this.requestOnce<T>(path, init, method, headers)
