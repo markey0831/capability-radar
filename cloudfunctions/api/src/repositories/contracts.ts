@@ -177,3 +177,15 @@ export interface AuditLogRecord {
 export interface AuditRepository {
   appendAuditLog(record: AuditLogRecord): Promise<void>
 }
+
+export interface AdminPasswordRecord {
+  id: 'admin_password'
+  saltHex: string
+  hashHex: string
+  updatedAt: string
+}
+
+export interface AdminSettingsRepository {
+  getAdminPassword(): Promise<AdminPasswordRecord | null>
+  saveAdminPassword(record: AdminPasswordRecord): Promise<void>
+}

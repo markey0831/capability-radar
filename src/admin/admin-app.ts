@@ -10,7 +10,7 @@ import { ROLE_MODELS } from '../config/role-models'
 import type { AdminApi, AdminBatch, AdminBatchDetails, AdminParticipant, AdminParticipantResult, AdminPerson, AdminRoleSummary, AdminSubmission } from './admin-api'
 import { decodeCsvBytes, parsePersonImportCsv } from './csv-import'
 
-type AdminView = 'loading' | 'login' | 'dashboard' | 'people' | 'batches' | 'batch' | 'result'
+type AdminView = 'loading' | 'login' | 'dashboard' | 'people' | 'batches' | 'batch' | 'result' | 'password'
 
 interface AdminState {
   view: AdminView
@@ -86,6 +86,7 @@ export function createAdminApp(host: HTMLElement, api: AdminApi, options: AdminA
     else if (state.view === 'people') content = renderPeople()
     else if (state.view === 'batches') content = renderBatches()
     else if (state.view === 'result') content = renderResult()
+    else if (state.view === 'password') content = renderChangePassword()
     else content = renderBatchDetail()
     host.innerHTML = content
   }
@@ -222,11 +223,25 @@ export function createAdminApp(host: HTMLElement, api: AdminApi, options: AdminA
           <button type="button" class="nav-button ${active === 'dashboard' ? 'active' : ''}" data-admin-view="dashboard">工作台</button>
           <button type="button" class="nav-button ${active === 'people' ? 'active' : ''}" data-admin-view="people">人员</button>
           <button type="button" class="nav-button ${active === 'batches' ? 'active' : ''}" data-admin-view="batches">批次</button>
+          <button type="button" class="nav-button ${active === 'password' ? 'active' : ''}" data-admin-view="password">修改密码</button>
           <button type="button" class="nav-button" data-admin-action="logout">退出</button>
         </nav>
       </header>
       <main class="route-main admin-main">${content}</main>
     </div>`
+  }
+
+  function renderChangePassword(): string {
+    return renderShell(`<section class="panel admin-panel">
+      <h1>修改密码</h1>
+      ${state.notice ? `<div class="inline-warning">${escapeHtml(state.notice)}</div>` : ''}
+      <form data-admin-form="change-password" class="stack-form">
+        <label class="field"><span>当前密码</span><input type="password" name="currentPassword" autocomplete="current-password" required></label>
+        <label class="field"><span>新密码（至少 12 位）</span><input type="password" name="newPassword" minlength="12" autocomplete="new-password" required></label>
+        <label class="field"><span>确认新密码</span><input type="password" name="confirmPassword" minlength="12" autocomplete="new-password" required></label>
+        <button class="button primary" type="submit" ${state.busy ? 'disabled' : ''}>${state.busy ? '保存中…' : '保存'}</button>
+      </form>
+    </section>`, 'password')
   }
 
   function renderDashboard(): string {
@@ -391,6 +406,7 @@ export function createAdminApp(host: HTMLElement, api: AdminApi, options: AdminA
     event.preventDefault()
     const kind = form.dataset.adminForm
     if (kind === 'login') void submitLogin(form)
+    if (kind === 'change-password') void submitChangePassword(form)
     if (kind === 'person') void submitPerson(form)
     if (kind === 'batch') void submitBatch(form)
     if (kind === 'participant') void submitParticipant(form)
@@ -438,6 +454,36 @@ export function createAdminApp(host: HTMLElement, api: AdminApi, options: AdminA
       const result = await api.login(password)
       setAuthenticated(result.csrfToken)
       await go('dashboard')
+    } catch (error) {
+      state.busy = false
+      state.notice = messageOf(error)
+      render()
+    }
+  }
+
+  async function submitChangePassword(form: HTMLFormElement): Promise<void> {
+    const data = new FormData(form)
+    const currentPassword = String(data.get('currentPassword') ?? '')
+    const newPassword = String(data.get('newPassword') ?? '')
+    const confirmPassword = String(data.get('confirmPassword') ?? '')
+    if (newPassword !== confirmPassword) {
+      state.notice = '两次输入的新密码不一致'
+      render()
+      return
+    }
+    if (newPassword.length < 12) {
+      state.notice = '新密码至少需要12个字符'
+      render()
+      return
+    }
+    state.busy = true
+    state.notice = null
+    render()
+    try {
+      await api.changePassword(currentPassword, newPassword)
+      state.busy = false
+      state.notice = '密码修改成功，下次登录请使用新密码。'
+      render()
     } catch (error) {
       state.busy = false
       state.notice = messageOf(error)

@@ -61,6 +61,10 @@
       "indexes": [
         { "name": "audit_target_time", "unique": false, "fields": [{ "field": "targetType", "direction": "asc" }, { "field": "targetId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }
       ]
+    },
+    {
+      "name": "admin_settings",
+      "indexes": []
     }
   ]
 }

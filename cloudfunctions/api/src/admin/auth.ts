@@ -9,8 +9,8 @@ export interface AdminAuthDependencies {
   sessions: AdminSessionService
   rateLimiter: RateLimiter
   now: () => Date
-  passwordSalt: string
-  passwordHash: string
+  getPassword: () => Promise<{ saltHex: string; hashHex: string }>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>
   allowedOrigins: ReadonlySet<string>
 }
 
@@ -24,7 +24,8 @@ export function registerAdminAuthRoutes(router: Router, dependencies: AdminAuthD
     await enforceRateLimit(dependencies.rateLimiter, `admin-login:${request.headers['x-forwarded-for'] ?? 'unknown'}`, dependencies.now().getTime())
     const body = request.json as { password?: unknown } | null
     if (!body || typeof body.password !== 'string' || body.password.length === 0 || body.password.length > 500) throw badRequest('请输入管理密码')
-    const valid = await verifyAdminPassword(body.password, dependencies.passwordSalt, dependencies.passwordHash)
+    const current = await dependencies.getPassword()
+    const valid = await verifyAdminPassword(body.password, current.saltHex, current.hashHex)
     if (!valid) throw new ApiError(401, 'ADMIN_LOGIN_FAILED', '管理密码不正确')
     const issued = await dependencies.sessions.issue()
     return {
@@ -32,6 +33,20 @@ export function registerAdminAuthRoutes(router: Router, dependencies: AdminAuthD
       headers: { 'Set-Cookie': issued.cookie },
       body: { authenticated: true, csrfToken: issued.csrfToken, expiresAt: issued.expiresAt },
     }
+  })
+
+  router.register('POST', '/admin/change-password', async (request) => {
+    assertWriteOrigin(request.headers.origin, dependencies.allowedOrigins)
+    await dependencies.sessions.authenticateWrite(request.headers.cookie, request.headers['x-csrf-token'])
+    await enforceRateLimit(dependencies.rateLimiter, `change-password:${request.headers['x-forwarded-for'] ?? 'unknown'}`, dependencies.now().getTime())
+    const body = request.json as { currentPassword?: unknown; newPassword?: unknown } | null
+    const currentPassword = typeof body?.currentPassword === 'string' ? body.currentPassword : ''
+    const newPassword = typeof body?.newPassword === 'string' ? body.newPassword : ''
+    if (!currentPassword) throw badRequest('请输入当前密码')
+    if (newPassword.length < 12) throw badRequest('新密码至少需要12个字符')
+    if (newPassword.length > 500) throw badRequest('新密码过长')
+    await dependencies.changePassword(currentPassword, newPassword)
+    return { status: 200, body: { changed: true } }
   })
 
   router.register('GET', '/admin/session', async (request) => {

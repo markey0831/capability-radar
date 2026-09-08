@@ -118,6 +118,7 @@ export interface AdminLoginResponse {
 export interface AdminApi {
   login(password: string): Promise<AdminLoginResponse>
   logout(): Promise<{ authenticated: false }>
+  changePassword(currentPassword: string, newPassword: string): Promise<{ changed: true }>
   session(): Promise<AdminSessionResponse>
   listRoles(): Promise<AdminRoleSummary[]>
   listPeople(): Promise<AdminPerson[]>
@@ -172,6 +173,10 @@ export class HttpAdminApi implements AdminApi {
 
   logout(): Promise<{ authenticated: false }> {
     return this.client.post('/admin/logout')
+  }
+
+  changePassword(currentPassword: string, newPassword: string): Promise<{ changed: true }> {
+    return this.client.post('/admin/change-password', { currentPassword, newPassword })
   }
 
   session(): Promise<AdminSessionResponse> {
@@ -291,13 +296,14 @@ export class MemoryAdminApi implements AdminApi {
   private readonly store: DemoStore
   private loggedIn = false
   private csrfToken = 'demo-csrf-token'
+  private password = MemoryAdminApi.demoPassword
 
   constructor(store: DemoStore = new DemoStore()) {
     this.store = store
   }
 
   async login(password: string): Promise<AdminLoginResponse> {
-    if (password !== MemoryAdminApi.demoPassword) throw new ApiError(401, 'ADMIN_LOGIN_FAILED', '管理密码不正确')
+    if (password !== this.password) throw new ApiError(401, 'ADMIN_LOGIN_FAILED', '管理密码不正确')
     this.loggedIn = true
     this.csrfToken = 'demo-csrf-token'
     return { authenticated: true, expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), csrfToken: this.csrfToken }
@@ -306,6 +312,14 @@ export class MemoryAdminApi implements AdminApi {
   async logout(): Promise<{ authenticated: false }> {
     this.loggedIn = false
     return { authenticated: false }
+  }
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ changed: true }> {
+    this.requireAuth()
+    if (currentPassword !== this.password) throw new ApiError(401, 'ADMIN_PASSWORD_INCORRECT', '当前密码不正确')
+    if (newPassword.length < 12) throw new ApiError(400, 'BAD_REQUEST', '新密码至少需要12个字符')
+    this.password = newPassword
+    return { changed: true }
   }
 
   async session(): Promise<AdminSessionResponse> {
