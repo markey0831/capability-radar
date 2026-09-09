@@ -283,7 +283,7 @@ main { flex: 1; }
 .admin-main { width: min(980px, calc(100% - 24px)); }
 .admin-panel { background: #fff; border: 1px solid #d3e6f2; border-radius: 12px; padding: 24px; box-shadow: 0 16px 40px rgba(17,65,98,.08); }
 .admin-panel h1 { margin: 0 0 16px; font-size: 22px; color: #123; }
-.admin-login { max-width: 420px; margin: 40px auto; }
+.admin-login { width: 100%; max-width: 420px; margin: 0; }
 .admin-inline-form { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
 .admin-inline-form input, .admin-inline-form select { padding: 9px 10px; border: 1px solid #c9dbe7; border-radius: 6px; }
 .admin-inline-form input[type="text"], .admin-inline-form input:not([type]), .admin-inline-form input[type="date"], .admin-inline-form input[type="datetime-local"], .admin-inline-form input[type="password"] { min-width: 150px; }
@@ -335,4 +335,12 @@ main { flex: 1; }
 
 .batch-meta {
   justify-content: center;
+}
+
+.route-host:has(> .admin-login) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
 }
