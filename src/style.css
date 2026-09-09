@@ -59,7 +59,7 @@ h1, h2, p { margin-top: 0; }
 .brand-mark i { position: absolute; left: 17px; top: 1px; width: 4px; height: 13px; border-radius: 3px; background: var(--blue-700); transform-origin: 2px 18px; }
 .brand-mark i:nth-child(2) { transform: rotate(60deg); }.brand-mark i:nth-child(3) { transform: rotate(120deg); }.brand-mark i:nth-child(4) { transform: rotate(180deg); }.brand-mark i:nth-child(5) { transform: rotate(240deg); }.brand-mark i:nth-child(6) { transform: rotate(300deg); }
 .site-header nav { display: flex; align-items: stretch; gap: 18px; }
-.nav-button { position: relative; padding: 0 10px; border: 0; background: transparent; color: #6e8799; font-weight: 700; font-size: 14px; }
+.nav-button { position: relative; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; text-align: center; border: 0; background: transparent; color: #6e8799; font-weight: 700; font-size: 14px; }
 .nav-button:hover, .nav-button.active { color: var(--blue-800); }
 .nav-button.active::after { content: ""; position: absolute; height: 3px; left: 8px; right: 8px; bottom: 0; background: var(--blue-700); border-radius: 3px 3px 0 0; }
 
@@ -118,7 +118,7 @@ main { flex: 1; }
 .role-preview li span { color: #8093a1; font-size: 10px; line-height: 1.5; }
 .panel-actions { display: flex; gap: 12px; margin-top: 28px; }.panel-actions.end { justify-content: flex-end; }
 
-.button { min-height: 42px; padding: 0 20px; border: 1px solid transparent; border-radius: 4px; font-weight: 800; font-size: 13px; transition: transform .15s, box-shadow .2s, background .2s; }
+.button { min-height: 42px; padding: 0 20px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-align: center; line-height: 1.2; border: 1px solid transparent; border-radius: 4px; font-weight: 800; font-size: 13px; transition: transform .15s, box-shadow .2s, background .2s; }
 .button:hover:not(:disabled) { transform: translateY(-1px); }
 .button.primary { color: #fff; border-color: var(--blue-700); background: linear-gradient(135deg, var(--blue-800), #248fd2); box-shadow: 0 8px 20px rgba(17, 120, 197, .18); }
 .button.primary:hover:not(:disabled) { box-shadow: 0 12px 24px rgba(17, 120, 197, .26); }
@@ -277,9 +277,9 @@ main { flex: 1; }
 
 /* 管理员后台 */
 .admin-shell { min-height: 100vh; display: flex; flex-direction: column; }
-.admin-header { display: flex; justify-content: space-between; gap: 16px; padding: 0 18px; }
+.admin-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 0 18px; }
 .admin-title { font-weight: 700; font-size: 15px; color: #123; white-space: nowrap; }
-.admin-nav { display: flex; gap: 4px; }
+.admin-nav { display: flex; align-items: center; gap: 4px; }
 .admin-main { width: min(980px, calc(100% - 24px)); }
 .admin-panel { background: #fff; border: 1px solid #d3e6f2; border-radius: 12px; padding: 24px; box-shadow: 0 16px 40px rgba(17,65,98,.08); }
 .admin-panel h1 { margin: 0 0 16px; font-size: 22px; color: #123; }
