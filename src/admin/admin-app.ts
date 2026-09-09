@@ -581,14 +581,19 @@ export function createAdminApp(host: HTMLElement, api: AdminApi, options: AdminA
       render()
       return
     }
+    state.busy = true
+    state.notice = `正在导入 ${rows.length} 条人员数据，请稍候...`
+    render()
     try {
       const result = await api.importPeople(rows)
-      state.notice = `导入完成：成功 ${result.imported} 条${result.errors.length ? `，失败 ${result.errors.length} 条（首条：第 ${result.errors[0].row} 行 ${result.errors[0].message}）` : ''}`
       await go('people')
+      state.notice = `导入完成：成功 ${result.imported} 条${result.errors.length ? `，失败 ${result.errors.length} 条（首条：第 ${result.errors[0].row} 行 ${result.errors[0].message}）` : ''}`
+      render()
     } catch (error) {
       state.notice = messageOf(error)
       render()
     } finally {
+      state.busy = false
       input.value = ''
     }
   }
