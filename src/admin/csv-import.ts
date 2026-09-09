@@ -1,4 +1,5 @@
 import type { AdminPersonImportRow } from './admin-api'
+import * as XLSX from 'xlsx'
 
 export function decodeCsvBytes(buffer: ArrayBuffer): string {
   try {
@@ -55,8 +56,7 @@ function toBoolean(value: string | undefined): boolean {
   return ['是', 'true', '1', 'yes', 'y'].includes((value ?? '').trim().toLowerCase())
 }
 
-export function parsePersonImportCsv(text: string): AdminPersonImportRow[] {
-  const rows = parseCsv(text)
+function parsePersonImportRows(rows: string[][]): AdminPersonImportRow[] {
   if (rows.length < 2) return []
   const header = rows[0].map((cell) => cell.trim())
   const column = (name: string) => header.findIndex((cell) => cell === name)
@@ -75,4 +75,23 @@ export function parsePersonImportCsv(text: string): AdminPersonImportRow[] {
       canBeRater: toBoolean(cells[raterColumn]),
     }))
     .filter((row) => row.name.length > 0 || row.department.length > 0)
+}
+
+export function parsePersonImportCsv(text: string): AdminPersonImportRow[] {
+  return parsePersonImportRows(parseCsv(text))
+}
+
+export function parsePersonImportWorkbook(buffer: ArrayBuffer): AdminPersonImportRow[] {
+  const workbook = XLSX.read(buffer, { type: 'array' })
+  const sheetName = workbook.SheetNames[0]
+  if (!sheetName) return []
+  const sheet = workbook.Sheets[sheetName]
+  const matrix = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, raw: false, defval: '' })
+  return parsePersonImportRows(matrix.map((row) => (row as unknown[]).map((cell) => String(cell ?? '').trim())))
+}
+
+export function parsePersonImportFile(buffer: ArrayBuffer, filename: string): AdminPersonImportRow[] {
+  const lower = filename.toLowerCase()
+  if (lower.endsWith('.xlsx') || lower.endsWith('.xls')) return parsePersonImportWorkbook(buffer)
+  return parsePersonImportCsv(decodeCsvBytes(buffer))
 }

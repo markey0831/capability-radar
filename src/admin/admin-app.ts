@@ -8,7 +8,7 @@ import { exportElementToPng, makePngFilename } from '../export/png-export'
 import { exportElementsToPdf, makePdfFilename } from '../export/pdf-export'
 import { ROLE_MODELS } from '../config/role-models'
 import type { AdminApi, AdminBatch, AdminBatchDetails, AdminParticipant, AdminParticipantResult, AdminPerson, AdminRoleSummary, AdminSubmission } from './admin-api'
-import { decodeCsvBytes, parsePersonImportCsv } from './csv-import'
+import { parsePersonImportFile } from './csv-import'
 import { mountQuestionBankEditor } from './question-bank-editor'
 
 type AdminView = 'loading' | 'login' | 'dashboard' | 'people' | 'batches' | 'batch' | 'result' | 'password' | 'bank'
@@ -289,7 +289,7 @@ export function createAdminApp(host: HTMLElement, api: AdminApi, options: AdminA
         <button class="button small ghost" type="button" data-admin-action="batch-deactivate">批量停用</button>
         <button class="button small ghost" type="button" data-admin-action="batch-activate">批量启用</button>
         <button class="button small ghost danger-text" type="button" data-admin-action="batch-delete">批量删除</button>
-        <label class="button small ghost">批量导入 CSV<input type="file" accept=".csv,text/csv" data-admin-input="import-people" hidden></label>
+        <label class="button small ghost">批量导入 Excel/CSV<input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" data-admin-input="import-people" hidden></label>
       </div>
       <div class="admin-list">${state.people.map((person) => `<div class="admin-row"><label class="admin-row-select"><input type="checkbox" data-admin-check="person" data-person-id="${escapeHtml(person.id)}" ${state.selectedPeople.has(person.id) ? 'checked' : ''}></label><div><b>${escapeHtml(person.name)}</b><span>${escapeHtml(person.department)}</span></div><div>${escapeHtml(roleName(state.roles, person.currentRoleId))}</div><div class="muted">${person.status === 'active' ? '启用' : '停用'}</div><div class="admin-row-actions"><button class="button small ghost" type="button" data-admin-action="toggle-person-status" data-person-id="${escapeHtml(person.id)}" data-status="${person.status}">${person.status === 'active' ? '停用' : '启用'}</button><button class="button small ghost danger-text" type="button" data-admin-action="delete-person" data-person-id="${escapeHtml(person.id)}">删除</button></div></div>`).join('') || '<p class="muted">暂无人员</p>'}</div>
     </section>`, 'people')
@@ -575,8 +575,7 @@ export function createAdminApp(host: HTMLElement, api: AdminApi, options: AdminA
   async function importPeopleFromFile(input: HTMLInputElement): Promise<void> {
     const file = input.files?.[0]
     if (!file) return
-    const text = decodeCsvBytes(await file.arrayBuffer())
-    const rows = parsePersonImportCsv(text)
+    const rows = parsePersonImportFile(await file.arrayBuffer(), file.name)
     if (rows.length === 0) {
       state.notice = '未解析到有效数据行。'
       render()
