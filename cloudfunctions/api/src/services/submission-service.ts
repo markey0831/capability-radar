@@ -1,6 +1,6 @@
-import { QUESTION_BANK } from '../../../../shared/question-bank/load'
-import { ANSWER_CODES, type AnswerCode } from '../../../../shared/question-bank/schema'
+import { ANSWER_CODES, type AnswerCode, type QuestionBankRole } from '../../../../shared/question-bank/schema'
 import { calculateIndividualDimensionScores } from '../../../../shared/scoring/questionnaire-score'
+import { getRole } from '../question-bank-store'
 import type { PublicRepository, SubmissionRecord } from '../repositories/contracts'
 import { ApiError, badRequest } from '../http/errors'
 import { verifyTaskToken } from '../security/task-token'
@@ -17,7 +17,7 @@ export interface SubmissionServiceDependencies {
   now: () => Date
 }
 
-function validateAnswers(role: (typeof QUESTION_BANK.roles)[number], raw: Record<string, unknown>): Record<string, AnswerCode> {
+function validateAnswers(role: QuestionBankRole, raw: Record<string, unknown>): Record<string, AnswerCode> {
   const questionIds = role.dimensions.flatMap((dimension) => dimension.questions.map((question) => question.id))
   if (Object.keys(raw).length !== questionIds.length) throw badRequest('请为全部30道题明确选择一个答案')
   const allowed = new Set<string>(ANSWER_CODES)
@@ -48,7 +48,7 @@ export class SubmissionService {
     if (!batch || batch.id !== assignment.batchId || batch.questionnaireVersionId !== payload.questionnaireVersionId) {
       throw new ApiError(409, 'BATCH_CLOSED', '本次评估已经结束，暂时不能提交')
     }
-    const role = QUESTION_BANK.roles.find((candidate) => candidate.id === batch.roleId)
+    const role = getRole(batch.roleId)
     if (!role) throw new ApiError(409, 'TASK_NOT_AVAILABLE', '该评价任务当前不可提交')
     const answers = validateAnswers(role, input.answers)
     const dimensionScores = calculateIndividualDimensionScores(role, answers)

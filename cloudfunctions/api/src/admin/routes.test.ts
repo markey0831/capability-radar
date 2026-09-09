@@ -47,12 +47,19 @@ async function setup() {
     let id = 0
     return () => `id-${++id}`
   })() })
+  const settingsRepository = {
+    getAdminPassword: async () => null,
+    saveAdminPassword: async () => undefined,
+    getQuestionBank: async () => null,
+    saveQuestionBank: async () => undefined,
+  }
   const app = createApp(config, (router) => registerAdminRoutes(router, {
     sessions,
     management,
     results: new ResultService(repository, now),
     audit: new AuditService(repository, now, () => `audit-${repository.auditLogs.size + 1}`),
     repository,
+    settingsRepository,
     allowedOrigins: config.allowedOrigins,
   }))
   return {

@@ -1,6 +1,6 @@
-import { QUESTION_BANK } from '../../../../shared/question-bank/load'
 import { RATER_LEVELS } from '../../../../shared/domain/types'
 import type { RaterLevel } from '../../../../shared/domain/types'
+import { getRole } from '../question-bank-store'
 import { notFound } from '../http/errors'
 import type { ResultsRepository } from '../repositories/contracts'
 import type { ResultService } from '../services/result-service'
@@ -25,7 +25,7 @@ export async function buildAssessmentExportDataset(
 ): Promise<AssessmentExportDataset> {
   const batch = await dependencies.repository.getBatch(batchId)
   if (!batch) throw notFound('批次不存在')
-  const role = QUESTION_BANK.roles.find((candidate) => candidate.id === batch.roleId)
+  const role = getRole(batch.roleId)
   if (!role) throw new Error(`题库中不存在职位：${batch.roleId}`)
 
   const dimensions = role.dimensions.map((dimension) => ({ id: dimension.id, name: dimension.name }))

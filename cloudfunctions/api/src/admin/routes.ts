@@ -1,9 +1,10 @@
-import { QUESTION_BANK } from '../../../../shared/question-bank/load'
 import type { RaterLevel } from '../../../../shared/domain/types'
+import type { QuestionBank, QuestionBankRole } from '../../../../shared/question-bank/schema'
+import { getQuestionBank, setQuestionBank } from '../question-bank-store'
 import type { Router } from '../http/router'
 import type { HttpRequest } from '../http/types'
 import { badRequest } from '../http/errors'
-import type { ResultsRepository } from '../repositories/contracts'
+import type { AdminSettingsRepository, ResultsRepository } from '../repositories/contracts'
 import type { AdminSessionService } from '../security/session'
 import type { ManagementService } from '../services/management-service'
 import type { ResultService } from '../services/result-service'
@@ -18,6 +19,7 @@ interface AdminRouteDependencies {
   results: ResultService
   audit: AuditService
   repository: ResultsRepository
+  settingsRepository: AdminSettingsRepository
   allowedOrigins: ReadonlySet<string>
 }
 
@@ -65,18 +67,60 @@ async function audited<T>(
   }, action)
 }
 
+function parseEditableRole(roleId: string, value: unknown): QuestionBankRole {
+  if (!value || typeof value !== 'object') throw badRequest('职位数据不正确')
+  const role = value as QuestionBankRole
+  if (role.id !== roleId) throw badRequest('职位 ID 不匹配')
+  if (typeof role.name !== 'string' || !role.name.trim()) throw badRequest('职位名称不能为空')
+  if (!Array.isArray(role.dimensions) || role.dimensions.length !== 6) throw badRequest(`${role.name} 必须包含 6 个维度`)
+  for (const dimension of role.dimensions) {
+    if (!dimension || typeof dimension !== 'object' || typeof dimension.id !== 'string') throw badRequest('维度数据不正确')
+    if (typeof dimension.name !== 'string' || !dimension.name.trim()) throw badRequest('维度名称不能为空')
+    if (typeof dimension.description !== 'string') throw badRequest('维度说明格式不正确')
+    if (!Array.isArray(dimension.questions) || dimension.questions.length !== 5) throw badRequest(`${role.name}/${dimension.name} 必须包含 5 道题`)
+    for (const question of dimension.questions) {
+      if (!question || typeof question !== 'object' || typeof question.id !== 'string') throw badRequest('题目数据不正确')
+      if (typeof question.prompt !== 'string' || !question.prompt.trim()) throw badRequest('题干不能为空')
+      if (typeof question.focus !== 'string') throw badRequest('题目 focus 格式不正确')
+      if (!question.options || typeof question.options !== 'object') throw badRequest('题目选项格式不正确')
+      for (const code of ['A', 'B', 'C', 'D', 'E'] as const) {
+        if (typeof question.options[code] !== 'string' || !question.options[code].trim()) throw badRequest(`选项 ${code} 不能为空`)
+      }
+    }
+  }
+  return role
+}
+
 export function registerAdminRoutes(router: Router, dependencies: AdminRouteDependencies): void {
   router.register('GET', '/admin/roles', async (request) => {
     await readSession(request, dependencies)
     return {
       status: 200,
-      body: QUESTION_BANK.roles.map((role) => ({
+      body: getQuestionBank().roles.map((role) => ({
         id: role.id,
         code: role.id,
         name: role.name,
         dimensions: role.dimensions.map((dimension) => ({ id: dimension.id, name: dimension.name })),
       })),
     }
+  })
+
+  router.register('GET', '/admin/question-bank', async (request) => {
+    await readSession(request, dependencies)
+    return { status: 200, body: getQuestionBank() }
+  })
+
+  router.register('PUT', '/admin/question-bank/:roleId', async (request, params) => {
+    const input = body(request)
+    const role = parseEditableRole(params.roleId, input.role)
+    await audited(request, dependencies, { action: 'question-bank.update', targetType: 'question-bank', targetId: params.roleId }, async () => {
+      const current = getQuestionBank()
+      const next: QuestionBank = { ...current, roles: current.roles.map((item) => item.id === role.id ? role : item) }
+      setQuestionBank(next)
+      await dependencies.settingsRepository.saveQuestionBank(next)
+      return { updated: true }
+    })
+    return { status: 200, body: { updated: true } }
   })
 
   router.register('GET', '/admin/people', async (request) => {

@@ -1,5 +1,5 @@
-import { QUESTION_BANK } from '../../../../shared/question-bank/load'
 import { normalizeRaterIdentity } from '../../../../shared/identity/normalize-identity'
+import { getQuestionBank, getRole } from '../question-bank-store'
 import type { PublicAssessmentRepository } from '../repositories/contracts'
 import { ApiError, badRequest, notFound } from '../http/errors'
 import { issueTaskToken, verifyTaskToken } from '../security/task-token'
@@ -12,7 +12,7 @@ export interface PublicServiceDependencies {
 }
 
 function findRole(roleId: string) {
-  return QUESTION_BANK.roles.find((role) => role.id === roleId)
+  return getRole(roleId)
 }
 
 export class PublicQuestionnaireService {
@@ -27,7 +27,7 @@ export class PublicQuestionnaireService {
       batch: batch
         ? { id: batch.id, name: batch.name, assessmentDate: batch.assessmentDate, deadlineAt: batch.deadlineAt }
         : null,
-      questionnaireVersion: QUESTION_BANK.version,
+      questionnaireVersion: getQuestionBank().version,
       anonymityNotice: '您的姓名仅供管理员核对完成情况，不会向被评估人展示，也不会出现在能力图或最终报告中。',
     }
   }
@@ -98,7 +98,7 @@ export class PublicQuestionnaireService {
       },
       batch: { id: batch.id, name: batch.name, deadlineAt: batch.deadlineAt },
       role,
-      questionnaireVersion: QUESTION_BANK.version,
+      questionnaireVersion: getQuestionBank().version,
     }
   }
 }

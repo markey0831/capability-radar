@@ -14,6 +14,8 @@ import { ManagementService } from './services/management-service'
 import { ResultService } from './services/result-service'
 import { AuditService } from './audit/audit-service'
 import { registerAdminRoutes } from './admin/routes'
+import { ensureQuestionBankLoaded } from './question-bank-store'
+import type { CloudBaseHttpEvent } from './http/types'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const cloudbase = require('@cloudbase/node-sdk') as any
 
@@ -78,8 +80,15 @@ const app = createApp(config, (router) => {
     results: resultService,
     audit: auditService,
     repository,
+    settingsRepository,
     allowedOrigins: config.allowedOrigins,
   })
 })
 
-export const main = app.handle
+export const main = async (event: CloudBaseHttpEvent) => {
+  await ensureQuestionBankLoaded(
+    () => settingsRepository.getQuestionBank(),
+    (bank) => settingsRepository.saveQuestionBank(bank),
+  )
+  return app.handle(event)
+}

@@ -1,5 +1,6 @@
 import { QUESTION_BANK } from '../../shared/question-bank/load'
 import type { RaterLevel } from '../../shared/domain/types'
+import type { QuestionBank, QuestionBankRole } from '../../shared/question-bank/schema'
 import { calculateQuestionnaireAssessment } from '../../shared/scoring/questionnaire-score'
 import { normalizeRaterIdentity } from '../../shared/identity/normalize-identity'
 import { ApiClient, ApiError } from '../app/api-client'
@@ -158,6 +159,8 @@ export interface AdminApi {
   }): Promise<{ batch: AdminBatch; copiedParticipants: number; copiedAssignments: number }>
   importPeople(rows: AdminPersonImportRow[]): Promise<AdminImportResult>
   exportBatch(batchId: string): Promise<AdminExportFile>
+  getQuestionBank(): Promise<QuestionBank>
+  saveQuestionBankRole(roleId: string, role: QuestionBankRole): Promise<{ updated: boolean }>
 }
 
 export class HttpAdminApi implements AdminApi {
@@ -285,6 +288,14 @@ export class HttpAdminApi implements AdminApi {
   exportBatch(batchId: string): Promise<AdminExportFile> {
     return this.client.get(`/admin/batches/${encodeURIComponent(batchId)}/export`)
   }
+
+  getQuestionBank(): Promise<QuestionBank> {
+    return this.client.get('/admin/question-bank')
+  }
+
+  saveQuestionBankRole(roleId: string, role: QuestionBankRole): Promise<{ updated: boolean }> {
+    return this.client.put(`/admin/question-bank/${encodeURIComponent(roleId)}`, { role })
+  }
 }
 
 type AdminPersonCreateInput = Parameters<AdminApi['createPerson']>[0]
@@ -297,6 +308,7 @@ export class MemoryAdminApi implements AdminApi {
   private loggedIn = false
   private csrfToken = 'demo-csrf-token'
   private password = MemoryAdminApi.demoPassword
+  private bank: QuestionBank = QUESTION_BANK
 
   constructor(store: DemoStore = new DemoStore()) {
     this.store = store
@@ -655,6 +667,20 @@ export class MemoryAdminApi implements AdminApi {
       })
     const csv = ['批次,被评估人,部门,评分人,层级,状态', ...rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(','))].join('\r\n')
     return { filename: `${batch.name}.csv`, contentType: 'text/csv', data: toBase64(csv) }
+  }
+
+  async getQuestionBank(): Promise<QuestionBank> {
+    this.requireAuth()
+    return this.bank
+  }
+
+  async saveQuestionBankRole(roleId: string, role: QuestionBankRole): Promise<{ updated: boolean }> {
+    this.requireAuth()
+    this.bank = {
+      ...this.bank,
+      roles: this.bank.roles.map((item) => item.id === roleId ? role : item),
+    }
+    return { updated: true }
   }
 
   private requireAuth(): void {

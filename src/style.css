@@ -344,3 +344,24 @@ main { flex: 1; }
   min-height: 100vh;
   padding: 24px;
 }
+
+/* 题库管理 */
+.bank-editor-host .admin-main { width: min(900px, calc(100% - 24px)); }
+.bank-role-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.bank-role-bar .nav-button { border: 1px solid #c9dbe7; border-radius: 6px; padding: 7px 12px; background: #fff; }
+.bank-role-bar .nav-button.active { color: #fff; background: var(--blue-700); border-color: var(--blue-700); }
+.bank-role-fields { display: grid; gap: 12px; margin-bottom: 22px; }
+.bank-role-fields .field { display: grid; gap: 6px; }
+.bank-dimension { margin-top: 20px; padding: 16px; border: 1px solid #d9e6ef; border-radius: 10px; background: #fbfdfe; }
+.bank-dimension h2 { margin: 0 0 12px; font-size: 16px; color: #123; }
+.bank-dim-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.bank-question { padding: 12px; margin-bottom: 12px; border: 1px solid #e2edf4; border-radius: 8px; background: #fff; }
+.bank-question-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.bank-question-head b { color: #1178c5; }
+.bank-question textarea, .bank-question input, .bank-role-fields input, .bank-role-fields textarea, .bank-dim-fields input, .bank-dim-fields textarea {
+  width: 100%; box-sizing: border-box; padding: 9px 10px; border: 1px solid #c9dbe7; border-radius: 6px; font: inherit;
+}
+.bank-options { display: grid; gap: 8px; margin-top: 8px; }
+.bank-option { display: grid; grid-template-columns: 24px 1fr; align-items: center; gap: 8px; color: #33495a; font-size: 13px; }
+.bank-option span { font-weight: 800; color: #1178c5; }
+.bank-option input { width: 100%; box-sizing: border-box; padding: 7px 9px; border: 1px solid #c9dbe7; border-radius: 6px; }

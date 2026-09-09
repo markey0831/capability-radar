@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
-import { QUESTION_BANK } from '../../../../shared/question-bank/load'
 import { RATER_LEVELS, RATER_LEVEL_WEIGHTS } from '../../../../shared/domain/types'
 import type { RaterLevel } from '../../../../shared/domain/types'
+import { getRole } from '../question-bank-store'
 import type { ResultSnapshotRecord, ResultsRepository } from '../repositories/contracts'
 import { ApiError, badRequest, notFound } from '../http/errors'
 
@@ -19,7 +19,7 @@ export class ResultService {
   async calculateParticipant(batchId: string, participantId: string) {
     const batch = await this.repository.getBatch(batchId)
     if (!batch) throw notFound('批次不存在')
-    const role = QUESTION_BANK.roles.find((candidate) => candidate.id === batch.roleId)
+    const role = getRole(batch.roleId)
     if (!role) throw new Error(`题库中不存在职位：${batch.roleId}`)
     const participant = (await this.repository.listParticipants(batchId)).find((candidate) => candidate.id === participantId)
     if (!participant || participant.status !== 'active') throw notFound('被评人不在该批次')

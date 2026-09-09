@@ -1,4 +1,4 @@
-import type { AnswerCode } from '../../../../shared/question-bank/schema'
+import type { AnswerCode, QuestionBank } from '../../../../shared/question-bank/schema'
 import type { IndividualDimensionScore, RaterLevel } from '../../../../shared/domain/types'
 
 export interface PersonRecord {
@@ -188,4 +188,6 @@ export interface AdminPasswordRecord {
 export interface AdminSettingsRepository {
   getAdminPassword(): Promise<AdminPasswordRecord | null>
   saveAdminPassword(record: AdminPasswordRecord): Promise<void>
+  getQuestionBank(): Promise<QuestionBank | null>
+  saveQuestionBank(bank: QuestionBank): Promise<void>
 }

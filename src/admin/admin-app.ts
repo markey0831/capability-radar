@@ -9,8 +9,9 @@ import { exportElementsToPdf, makePdfFilename } from '../export/pdf-export'
 import { ROLE_MODELS } from '../config/role-models'
 import type { AdminApi, AdminBatch, AdminBatchDetails, AdminParticipant, AdminParticipantResult, AdminPerson, AdminRoleSummary, AdminSubmission } from './admin-api'
 import { decodeCsvBytes, parsePersonImportCsv } from './csv-import'
+import { mountQuestionBankEditor } from './question-bank-editor'
 
-type AdminView = 'loading' | 'login' | 'dashboard' | 'people' | 'batches' | 'batch' | 'result' | 'password'
+type AdminView = 'loading' | 'login' | 'dashboard' | 'people' | 'batches' | 'batch' | 'result' | 'password' | 'bank'
 
 interface AdminState {
   view: AdminView
@@ -87,6 +88,17 @@ export function createAdminApp(host: HTMLElement, api: AdminApi, options: AdminA
     else if (state.view === 'batches') content = renderBatches()
     else if (state.view === 'result') content = renderResult()
     else if (state.view === 'password') content = renderChangePassword()
+    else if (state.view === 'bank') {
+      host.innerHTML = ''
+      const bankHost = document.createElement('div')
+      bankHost.className = 'bank-editor-host'
+      host.appendChild(bankHost)
+      mountQuestionBankEditor(bankHost, {
+        api,
+        onBack: () => void go('dashboard'),
+      })
+      return
+    }
     else content = renderBatchDetail()
     host.innerHTML = content
   }
@@ -226,6 +238,7 @@ export function createAdminApp(host: HTMLElement, api: AdminApi, options: AdminA
           <button type="button" class="nav-button ${active === 'dashboard' ? 'active' : ''}" data-admin-view="dashboard">工作台</button>
           <button type="button" class="nav-button ${active === 'people' ? 'active' : ''}" data-admin-view="people">人员</button>
           <button type="button" class="nav-button ${active === 'batches' ? 'active' : ''}" data-admin-view="batches">批次</button>
+          <button type="button" class="nav-button ${active === 'bank' ? 'active' : ''}" data-admin-view="bank">题库</button>
           <button type="button" class="nav-button ${active === 'password' ? 'active' : ''}" data-admin-view="password">修改密码</button>
           <button type="button" class="nav-button" data-admin-action="logout">退出</button>
         </nav>

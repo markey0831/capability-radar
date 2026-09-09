@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
-import { QUESTION_BANK } from '../../../../shared/question-bank/load'
 import { normalizeRaterIdentity } from '../../../../shared/identity/normalize-identity'
+import { getQuestionBank, hasRole } from '../question-bank-store'
 import type { RaterLevel } from '../../../../shared/domain/types'
 import type { ManagementRepository } from '../repositories/contracts'
 import { ApiError, badRequest, notFound } from '../http/errors'
@@ -58,7 +58,7 @@ export class ManagementService {
     canBeRater: boolean
   }) {
     const identity = normalizeRaterIdentity(requireText(input.name, '姓名', 100), requireText(input.department, '部门', 200))
-    if (input.currentRoleId && !QUESTION_BANK.roles.some((role) => role.id === input.currentRoleId)) throw badRequest('职位不存在')
+    if (input.currentRoleId && !hasRole(input.currentRoleId)) throw badRequest('职位不存在')
     const person = {
       id: this.dependencies.createId?.() ?? randomUUID(),
       name: identity.displayName,
@@ -84,7 +84,7 @@ export class ManagementService {
   }) {
     const existing = await this.dependencies.repository.getPerson(personId)
     if (!existing) throw notFound('人员不存在')
-    if (input.currentRoleId && !QUESTION_BANK.roles.some((role) => role.id === input.currentRoleId)) throw badRequest('职位不存在')
+    if (input.currentRoleId && !hasRole(input.currentRoleId)) throw badRequest('职位不存在')
     if (input.status && !['active', 'inactive'].includes(input.status)) throw badRequest('人员状态不正确')
     const identity = normalizeRaterIdentity(requireText(input.name, '姓名', 100), requireText(input.department, '部门', 200))
     const updated = {
@@ -121,13 +121,13 @@ export class ManagementService {
   }
 
   async createBatch(input: { name: string; roleId: string; assessmentDate: string; startsAt: string; deadlineAt: string }) {
-    if (!QUESTION_BANK.roles.some((role) => role.id === input.roleId)) throw badRequest('职位不存在')
+    if (!hasRole(input.roleId)) throw badRequest('职位不存在')
     const schedule = this.parseBatchSchedule(input)
     const batch = {
       id: this.dependencies.createId?.() ?? randomUUID(),
       name: requireText(input.name, '批次名称', 200),
       roleId: input.roleId,
-      questionnaireVersionId: QUESTION_BANK.version,
+      questionnaireVersionId: getQuestionBank().version,
       ...schedule,
       status: 'draft' as const,
     }
@@ -172,7 +172,7 @@ export class ManagementService {
   async copyBatch(sourceBatchId: string, input: { name: string; assessmentDate: string; startsAt: string; deadlineAt: string }) {
     const source = await this.dependencies.repository.getBatch(sourceBatchId)
     if (!source) throw notFound('源批次不存在')
-    if (!QUESTION_BANK.roles.some((role) => role.id === source.roleId)) throw badRequest('源批次职位不存在')
+    if (!hasRole(source.roleId)) throw badRequest('源批次职位不存在')
     const schedule = this.parseBatchSchedule(input)
     const batch = {
       id: this.dependencies.createId?.() ?? randomUUID(),
