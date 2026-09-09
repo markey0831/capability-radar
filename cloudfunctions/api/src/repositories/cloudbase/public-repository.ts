@@ -27,10 +27,10 @@ export class CloudBasePublicRepository implements PublicRepository {
 
   async findOpenBatchByRole(roleId: string, now: string): Promise<BatchRecord | null> {
     const result = await this.database.collection('assessment_batches')
-      .where({ roleId, status: 'open' })
+      .where({ roleId })
       .limit(2)
       .get() as CloudBaseQueryResult<BatchRecord>
-    const matches = allRecords(result).filter((batch) => batch.startsAt <= now && batch.deadlineAt > now)
+    const matches = allRecords(result).filter((batch) => batch.status === 'open' && batch.startsAt <= now && batch.deadlineAt > now)
     if (matches.length > 1) throw new Error(`职位 ${roleId} 存在多个开放批次`)
     return matches[0] ?? null
   }
