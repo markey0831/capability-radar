@@ -105,6 +105,7 @@ export function createAdminApp(host: HTMLElement, api: AdminApi, options: AdminA
 
   const setAuthenticated = (csrfToken: string): void => {
     state.authenticated = true
+    state.busy = false
     sessionStore.setCsrfToken(csrfToken)
   }
 
@@ -845,7 +846,7 @@ export function createAdminApp(host: HTMLElement, api: AdminApi, options: AdminA
       // 即使服务端撤销失败，本地也退出。
     }
     clearAuthenticated()
-    render()
+    window.location.hash = '/'
   }
 
   void mount()
