@@ -117,6 +117,20 @@ export class DemoStore {
     this.persist()
   }
 
+  deleteBatch(batchId: string): void {
+    for (const [id, participant] of this.participants) {
+      if (participant.batchId === batchId) this.participants.delete(id)
+    }
+    for (const [id, assignment] of this.assignments) {
+      if (assignment.batchId === batchId) this.assignments.delete(id)
+    }
+    for (const [id, submission] of this.submissions) {
+      if (submission.batchId === batchId) this.submissions.delete(id)
+    }
+    this.batches.delete(batchId)
+    this.persist()
+  }
+
   listParticipants(batchId: string): DemoParticipant[] {
     return [...this.participants.values()].filter((value) => value.batchId === batchId).map((value) => structuredClone(value))
   }

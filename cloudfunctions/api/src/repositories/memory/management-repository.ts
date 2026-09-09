@@ -89,6 +89,27 @@ export class MemoryManagementRepository extends MemoryPublicRepository implement
     return 'opened' as const
   }
 
+  async deleteBatchCascade(batchId: string): Promise<'deleted' | 'not-found'> {
+    const batch = this.batches.get(batchId)
+    if (!batch) return 'not-found'
+
+    for (const [id, participant] of this.participants) {
+      if (participant.batchId === batchId) this.participants.delete(id)
+    }
+    for (const [id, assignment] of this.assignments) {
+      if (assignment.batchId === batchId) this.assignments.delete(id)
+    }
+    for (const [id, submission] of this.submissions) {
+      if (submission.batchId === batchId) this.submissions.delete(id)
+    }
+    for (const [id, snapshot] of this.snapshots) {
+      if (snapshot.batchId === batchId) this.snapshots.delete(id)
+    }
+    this.activeBatches.delete(batch.roleId)
+    this.batches.delete(batchId)
+    return 'deleted'
+  }
+
   async listSubmissions(batchId: string, participantId?: string): Promise<SubmissionRecord[]> {
     return [...this.submissions.values()]
       .filter((value) => value.batchId === batchId && (!participantId || value.participantId === participantId))

@@ -148,6 +148,7 @@ export interface ManagementRepository {
   listAssignments(batchId: string): Promise<AssignmentRecord[]>
   saveAssignment(assignment: AssignmentRecord): Promise<void>
   openBatchAtomic(batchId: string, roleId: string, openedAt: string): Promise<'opened' | 'role-already-open' | 'not-found' | 'invalid-status'>
+  deleteBatchCascade(batchId: string): Promise<'deleted' | 'not-found'>
 }
 
 export interface ResultsRepository {

@@ -135,6 +135,12 @@ export class ManagementService {
     return batch
   }
 
+  async deleteBatch(batchId: string) {
+    const result = await this.dependencies.repository.deleteBatchCascade(batchId)
+    if (result === 'not-found') throw notFound('批次不存在')
+    return { id: batchId, deleted: true }
+  }
+
   async updateBatch(batchId: string, input: { name: string; assessmentDate: string; startsAt: string; deadlineAt: string }) {
     const batch = await this.dependencies.repository.getBatch(batchId)
     if (!batch) throw notFound('批次不存在')

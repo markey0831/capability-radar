@@ -307,7 +307,7 @@ export function createAdminApp(host: HTMLElement, api: AdminApi, options: AdminA
         <input name="deadlineAt" type="datetime-local" required>
         <button class="button primary small" type="submit">创建</button>
       </form>
-      <div class="admin-list">${state.batches.map((batch) => `<button class="admin-row admin-row-button" type="button" data-admin-action="open-batch-detail" data-batch-id="${escapeHtml(batch.id)}"><div><b>${escapeHtml(batch.name)}</b><span>${escapeHtml(roleName(state.roles, batch.roleId))}</span></div><div class="muted">${escapeHtml(formatDateTime(batch.deadlineAt))}</div><div>${escapeHtml(batch.status)}</div></button>`).join('') || '<p class="muted">暂无批次</p>'}</div>
+      <div class="admin-list">${state.batches.map((batch) => `<div class="admin-row"><button class="admin-row-button" type="button" data-admin-action="open-batch-detail" data-batch-id="${escapeHtml(batch.id)}"><div><b>${escapeHtml(batch.name)}</b><span>${escapeHtml(roleName(state.roles, batch.roleId))}</span></div><div class="muted">${escapeHtml(formatDateTime(batch.deadlineAt))}</div><div>${escapeHtml(batch.status)}</div></button><button class="button small ghost danger-text" type="button" data-admin-action="delete-batch" data-batch-id="${escapeHtml(batch.id)}">删除</button></div>`).join('') || '<p class="muted">暂无批次</p>'}</div>
     </section>`, 'batches')
   }
 
@@ -334,6 +334,7 @@ export function createAdminApp(host: HTMLElement, api: AdminApi, options: AdminA
         ${batch.status === 'closed' ? '<button class="button ghost" type="button" data-admin-action="archive-batch">归档</button>' : ''}
         <button class="button ghost" type="button" data-admin-action="copy-batch">复制批次</button>
         <button class="button secondary" type="button" data-admin-action="export-batch">导出 Excel/CSV</button>
+        <button class="button ghost danger-text" type="button" data-admin-action="delete-batch" data-batch-id="${escapeHtml(batch.id)}">删除批次</button>
       </div>
       <h2>被评估人</h2>
       <form data-admin-form="participant" class="admin-inline-form">
@@ -443,6 +444,7 @@ export function createAdminApp(host: HTMLElement, api: AdminApi, options: AdminA
     if (target.dataset.adminAction === 'extend-batch') void extendCurrentBatch()
     if (target.dataset.adminAction === 'archive-batch') void archiveCurrentBatch()
     if (target.dataset.adminAction === 'copy-batch') void copyCurrentBatch()
+    if (target.dataset.adminAction === 'delete-batch') void deleteBatch(target.dataset.batchId ?? '')
     if (target.dataset.adminAction === 'view-result') void viewResult(target.dataset.participantId ?? '')
     if (target.dataset.adminAction === 'export-png') void exportPng()
     if (target.dataset.adminAction === 'export-pdf') void exportPdf()
@@ -768,6 +770,29 @@ export function createAdminApp(host: HTMLElement, api: AdminApi, options: AdminA
       state.notice = '已复制为新草稿批次。'
       state.view = 'batches'
       await go('batches')
+    } catch (error) {
+      state.notice = messageOf(error)
+      render()
+    }
+  }
+
+  async function deleteBatch(batchId: string): Promise<void> {
+    const batch = state.details?.batch.id === batchId
+      ? state.details.batch
+      : state.batches.find((candidate) => candidate.id === batchId)
+    if (!batch) return
+    if (!window.confirm(`确定删除批次“${batch.name}”吗？该批次下的人员、评分任务、答卷和结果都会一并删除，且不可恢复。`)) return
+    try {
+      await api.deleteBatch(batchId)
+      state.selectedBatchId = null
+      state.details = null
+      state.submissions = []
+      state.results = {}
+      state.view = 'batches'
+      state.notice = `已删除批次“${batch.name}”。`
+      await go('batches')
+      state.notice = `已删除批次“${batch.name}”。`
+      render()
     } catch (error) {
       state.notice = messageOf(error)
       render()

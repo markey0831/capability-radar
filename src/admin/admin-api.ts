@@ -140,6 +140,7 @@ export interface AdminApi {
     startsAt: string
     deadlineAt: string
   }): Promise<AdminBatch>
+  deleteBatch(batchId: string): Promise<{ id: string; deleted: boolean }>
   getBatchDetails(batchId: string): Promise<AdminBatchDetails>
   addParticipant(batchId: string, personId: string): Promise<AdminParticipant>
   addAssignment(batchId: string, participantId: string, raterPersonId: string, level: RaterLevel): Promise<AdminAssignment>
@@ -219,6 +220,10 @@ export class HttpAdminApi implements AdminApi {
 
   createBatch(input: AdminBatchCreateInput): Promise<AdminBatch> {
     return this.client.post('/admin/batches', input)
+  }
+
+  deleteBatch(batchId: string): Promise<{ id: string; deleted: boolean }> {
+    return this.client.delete(`/admin/batches/${encodeURIComponent(batchId)}`)
   }
 
   getBatchDetails(batchId: string): Promise<AdminBatchDetails> {
@@ -413,6 +418,14 @@ export class MemoryAdminApi implements AdminApi {
     }
     this.store.saveBatch(batch)
     return { ...batch }
+  }
+
+  async deleteBatch(batchId: string): Promise<{ id: string; deleted: boolean }> {
+    this.requireAuth()
+    const existing = this.store.getBatch(batchId)
+    if (!existing) throw new ApiError(404, 'NOT_FOUND', '批次不存在')
+    this.store.deleteBatch(batchId)
+    return { id: batchId, deleted: true }
   }
 
   async getBatchDetails(batchId: string): Promise<AdminBatchDetails> {

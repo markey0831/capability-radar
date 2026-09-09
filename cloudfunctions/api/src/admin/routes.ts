@@ -183,6 +183,13 @@ export function registerAdminRoutes(router: Router, dependencies: AdminRouteDepe
     return { status: 201, body: batch }
   })
 
+  router.register('DELETE', '/admin/batches/:batchId', async (request, params) => {
+    const result = await audited(request, dependencies, { action: 'batch.delete', targetType: 'batch', targetId: params.batchId }, () =>
+      dependencies.management.deleteBatch(params.batchId),
+    )
+    return { status: 200, body: result }
+  })
+
   router.register('PUT', '/admin/batches/:batchId', async (request, params) => {
     const input = body(request)
     const batch = await audited(request, dependencies, { action: 'batch.update', targetType: 'batch', targetId: params.batchId }, () =>

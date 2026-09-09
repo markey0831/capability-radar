@@ -117,6 +117,39 @@ export class CloudBaseManagementRepository extends CloudBasePublicRepository imp
     return result?.result ?? result
   }
 
+  async deleteBatchCascade(batchId: string): Promise<'deleted' | 'not-found'> {
+    const batch = await this.getBatch(batchId)
+    if (!batch) return 'not-found'
+
+    const participants = await this.listParticipants(batchId)
+    const assignments = await this.listAssignments(batchId)
+    const submissions = await this.listSubmissions(batchId)
+    const snapshots = await this.listResultSnapshots(batchId)
+
+    const removeDocument = async (collection: string, id: string): Promise<void> => {
+      try {
+        await this.db.collection(collection).doc(id).remove()
+      } catch (error) {
+        if (!missing(error)) throw error
+      }
+    }
+
+    await Promise.all([
+      ...participants.map((participant) => removeDocument('batch_participants', participant.id)),
+      ...assignments.map((assignment) => removeDocument('assignments', assignment.id)),
+      ...submissions.map((submission) => removeDocument('submissions', submission.id)),
+      ...snapshots.map((snapshot) => removeDocument('result_snapshots', snapshot.id)),
+    ])
+
+    try {
+      await this.db.collection('role_active_batches').doc(batch.roleId).remove()
+    } catch (error) {
+      if (!missing(error)) throw error
+    }
+    await this.db.collection('assessment_batches').doc(batchId).remove()
+    return 'deleted'
+  }
+
   async listSubmissions(batchId: string, participantId?: string): Promise<SubmissionRecord[]> {
     return this.list<SubmissionRecord>('submissions', participantId ? { batchId, participantId } : { batchId })
   }
