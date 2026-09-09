@@ -37,7 +37,7 @@ export class ApiClient {
   constructor(options: ApiClientOptions = {}) {
     const env = import.meta.env as Record<string, string | undefined> | undefined
     this.baseUrl = (options.baseUrl ?? env?.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
-    this.fetchImpl = options.fetch ?? fetch
+    this.fetchImpl = options.fetch ?? fetch.bind(globalThis)
     this.timeoutMs = options.timeoutMs ?? 30_000
     this.getCsrfToken = options.getCsrfToken ?? (() => null)
     this.onUnauthorized = options.onUnauthorized ?? (() => undefined)
